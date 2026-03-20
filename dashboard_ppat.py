@@ -83,9 +83,6 @@ try:
     
     fig = px.bar(counts, x='Jumlah', y='PPAT', orientation='h', text='Jumlah')
     fig.update_layout(height=max(400, len(counts)*30), yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="")
-
-try:
-    data = load()
     
     # Mencari kolom secara otomatis (ini harus ada di kode tapi bisa disembunyikan di tampilan)
     c_kantah = [c for c in data.columns if 'Kantor Pertanahan' in c][0]
