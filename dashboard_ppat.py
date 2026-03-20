@@ -116,7 +116,6 @@ try:
     st.plotly_chart(fig, use_container_width=True)
 
 # 3. Proses Tampilan
-try:
     data = ambil_data()
     
     # Deteksi kolom (mencari kolom yang relevan secara otomatis)
