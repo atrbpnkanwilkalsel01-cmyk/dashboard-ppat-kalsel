@@ -187,9 +187,3 @@ try:
         height=max(400, len(counts) * 30),
         margin=dict(l=200)
     )
-    
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Tabel Detail (Hanya menampilkan Timestamp)
-    with st.expander("Lihat Detail Waktu"):
-        st.dataframe(df_f[['Timestamp']], use_container_width=True)
