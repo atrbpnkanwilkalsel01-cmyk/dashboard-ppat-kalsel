@@ -42,3 +42,6 @@ try:
     fig.update_layout(height=max(400, len(counts)*30), yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="")
     
     st.plotly_chart(fig, use_container_width=True)
+
+except Exception as e:
+    st.error(f"Terjadi kesalahan: {e}")
