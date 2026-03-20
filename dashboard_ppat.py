@@ -10,8 +10,7 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1QPeMTsbhho_YNS8nEq4gtz3WHk9
 @st.cache_data(ttl=60)
 def load_data():
     df = pd.read_csv(SHEET_URL)
-    df.columns = df.columns.str.strip() # Bersihkan spasi di nama kolom
-    # Pastikan semua kolom menjadi teks agar tidak error
+    df.columns = df.columns.str.strip() 
     for col in df.columns:
         df[col] = df[col].astype(str)
     return df
@@ -22,7 +21,6 @@ try:
     # Identifikasi Kolom Otomatis
     col_kantah = [c for c in df.columns if 'Kantor Pertanahan' in c][0]
     col_ppat = [c for c in df.columns if 'Kantah' in c or 'Nama' in c][0]
-    col_bulan = [c for c in df.columns if 'Bulan' in c][0]
 
     st.title("📊 Monitoring Pelaporan PPAT Per Wilayah")
     st.divider()
@@ -40,13 +38,14 @@ try:
         df_filtered = df
         st.subheader("📍 Daftar PPAT yang Melapor (Seluruh Wilayah)")
 
-    # --- RINGKASAN ---
+    # --- RINGKASAN ANGKA ---
     col_stat1, col_stat2 = st.columns(2)
-    col_stat1.metric("Total Laporan", len(df_filtered))
-    col_stat2.metric("Jumlah PPAT Unik", df_filtered[col_ppat].nunique())
+    with col_stat1:
+        st.metric("Total Laporan Masuk", len(df_filtered))
+    with col_stat2:
+        st.metric("Jumlah PPAT yang Melapor", df_filtered[col_ppat].nunique())
 
-    # --- GRAFIK UTAMA: PPAT MANA SAJA YANG MELAPOR ---
-    # Menghitung laporan per PPAT berdasarkan filter wilayah
+    # --- GRAFIK UTAMA: NAMA PPAT ---
     df_ppat_count = df_filtered[col_ppat].value_counts().reset_index()
     df_ppat_count.columns = [col_ppat, 'Jumlah Laporan']
 
@@ -56,9 +55,11 @@ try:
         y=col_ppat, 
         orientation='h',
         color='Jumlah Laporan',
-        color_continuous_scale='Viridis',
-        title=f"Aktivitas PPAT di {pilihan_kantah}"
+        color_continuous_scale='Blues',
+        text='Jumlah Laporan'
     )
-    fig_ppat.update_layout(yaxis={'categoryorder':'total ascending'}) # Urutkan dari yang terbanyak
-    st.plotly_chart(fig_ppat, use_container_width=True)
-
+    
+    fig_ppat.update_traces(textposition='outside')
+    fig_ppat.update_layout(
+        yaxis={'categoryorder':'total ascending'},
+        height=max(400, len(df_ppat_count)
