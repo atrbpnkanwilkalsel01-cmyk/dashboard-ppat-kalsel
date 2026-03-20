@@ -25,9 +25,6 @@ try:
     # Cari kolom yang ada kata 'Nama' dan 'PPAT'
     col_ppat = [c for c in df.columns if 'Nama' in c and 'PPAT' in c]
 
-    if not col_kantah or not col_ppat:
-        st.error("Gagal menemukan kolom 'Kantor Pertanahan' atau 'Nama PPAT'.")
-        st.write("Kolom yang tersedia di Sheets Anda adalah:", list(df.columns))
     else:
         ck = col_kantah[0]
         cp = col_ppat[0]
