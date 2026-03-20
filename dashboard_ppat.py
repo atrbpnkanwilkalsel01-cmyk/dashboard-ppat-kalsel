@@ -7,51 +7,59 @@ st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")
 # Link Google Sheets
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1QPeMTsbhho_YNS8nEq4gtz3WHk925Zb_gtYXpUvXkH0/export?format=csv"
 
-@st.cache_data(ttl=600) # Data akan refresh setiap 10 menit
+@st.cache_data(ttl=60)
 def load_data():
+    # Membaca data dan membersihkan spasi di nama kolom
     df = pd.read_csv(SHEET_URL)
-    # Menghapus baris yang benar-benar kosong jika ada
-    df = df.dropna(subset=['Bulan', 'Kantor Pertanahan (Wilayah kerja)'])
-    # Memastikan semua data di kolom kunci berupa teks agar tidak error 'float vs str'
-    df['Bulan'] = df['Bulan'].astype(str)
-    df['Kantor Pertanahan (Wilayah kerja)'] = df['Kantor Pertanahan (Wilayah kerja)'].astype(str)
-    df['Kantah Kotabaru'] = df['Kantah Kotabaru'].astype(str)
+    df.columns = df.columns.str.strip() 
     return df
 
 try:
     df = load_data()
 
-    st.title("📊 Analisis Pelaporan PPAT - Kanwil Kalsel")
-    st.info(f"Total Laporan Terdata: {len(df)} entri")
+    st.title("📊 Dashboard Pelaporan PPAT Kalsel")
+    
+    # Mencari nama kolom secara fleksibel agar tidak error lagi
+    col_kantah = [c for c in df.columns if 'Kantor Pertanahan' in c][0]
+    col_bulan = [c for c in df.columns if 'Bulan' in c][0]
+    # Mencari kolom PPAT (biasanya yang ada kata 'Nama' atau 'Kotabaru')
+    col_ppat_list = [c for c in df.columns if 'Kantah' in c or 'Nama' in c]
+    col_ppat = col_ppat_list[0] if col_ppat_list else df.columns[2]
 
-    # 1. GRAFIK PER KANTAH (Wilayah Kerja)
-    st.subheader("🏢 Jumlah Laporan per Kantor Pertanahan")
-    df_kantah = df['Kantor Pertanahan (Wilayah kerja)'].value_counts().reset_index()
-    fig_kantah = px.bar(df_kantah, x='count', y='Kantor Pertanahan (Wilayah kerja)', 
-                        orientation='h', color='count', color_continuous_scale='Blues',
-                        labels={'count':'Jumlah Laporan', 'Kantor Pertanahan (Wilayah kerja)':'Kantah'})
-    st.plotly_chart(fig_kantah, use_container_width=True)
+    # Ringkasan Singkat
+    st.success(f"Berhasil memuat {len(df)} data pelaporan.")
 
-    col1, col2 = st.columns(2)
+    # --- GRAFIK 1: PER WILAYAH ---
+    st.subheader("🏢 Laporan per Kantor Pertanahan")
+    data_kantah = df[col_kantah].value_counts().reset_index()
+    fig1 = px.bar(data_kantah, x=col_kantah, y='count', color='count',
+                  labels={'count':'Jumlah', col_kantah:'Wilayah'})
+    st.plotly_chart(fig1, use_container_width=True)
 
-    with col1:
-        # 2. GRAFIK PER BULAN
-        st.subheader("📅 Laporan per Bulan")
-        df_bulan = df['Bulan'].value_counts().reset_index()
-        fig_bulan = px.pie(df_bulan, values='count', names='Bulan', hole=0.4)
-        st.plotly_chart(fig_bulan, use_container_width=True)
+    col_left, col_right = st.columns(2)
 
-    with col2:
-        # 3. GRAFIK PER PPAT (Top 10)
-        st.subheader("👤 Top 10 PPAT Teraktif")
-        df_ppat = df['Kantah Kotabaru'].value_counts().head(10).reset_index()
-        fig_ppat = px.bar(df_ppat, x='count', y='Kantah Kotabaru', orientation='h',
-                          color_discrete_sequence=['#FF4B4B'])
-        st.plotly_chart(fig_ppat, use_container_width=True)
+    with col_left:
+        # --- GRAFIK 2: PER BULAN ---
+        st.subheader("📅 Distribusi per Bulan")
+        data_bulan = df[col_bulan].value_counts().reset_index()
+        fig2 = px.pie(data_bulan, names=col_bulan, values='count', hole=0.3)
+        st.plotly_chart(fig2, use_container_width=True)
 
-    # Tabel Data Mentah
-    with st.expander("Klik untuk lihat detail tabel data"):
-        st.write(df)
+    with col_right:
+        # --- GRAFIK 3: TOP PPAT ---
+        st.subheader("👤 Top 10 PPAT (Pelaporan Terbanyak)")
+        data_ppat = df[col_ppat].value_counts().head(10).reset_index()
+        fig3 = px.bar(data_ppat, x='count', y=col_ppat, orientation='h', 
+                      color_discrete_sequence=['#00CC96'])
+        st.plotly_chart(fig3, use_container_width=True)
+
+    # Menampilkan Tabel
+    with st.expander("Lihat Tabel Data Lengkap"):
+        st.dataframe(df)
 
 except Exception as e:
-    st.error(f"Data sedang diproses atau ada kolom yang tidak sesuai. Error: {e}")
+    st.error("Terjadi kendala pembacaan kolom.")
+    st.info("Pastikan nama kolom di Google Sheets tidak diubah-ubah.")
+    # Menampilkan nama kolom yang terdeteksi untuk memudahkan pengecekan
+    if 'df' in locals():
+        st.write("Kolom yang ditemukan di Sheets Anda:", list(df.columns))
