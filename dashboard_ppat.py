@@ -86,11 +86,6 @@ try:
     
     st.plotly_chart(fig, use_container_width=True)
 
-except Exception as e:
-    st.error("Gagal memuat data. Periksa koneksi atau kolom Google Sheets.")rt streamlit as st
-import pandas as pd
-import plotly.express as px
-
 st.set_page_config(page_title="Dashboard", layout="wide")
 
 # Link Data
