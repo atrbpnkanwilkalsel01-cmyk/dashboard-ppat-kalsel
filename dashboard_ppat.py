@@ -84,10 +84,7 @@ try:
     fig = px.bar(counts, x='Jumlah', y='PPAT', orientation='h', text='Jumlah')
     fig.update_layout(height=max(400, len(counts)*30), yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="")
     
-    st.plotly_chart(fig, use_container_width=True)
-
-# Link Data
-URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
+    st.plotly_chart(fig, use_container_width=True
 
 @st.cache_data(ttl=60)
 def load():
