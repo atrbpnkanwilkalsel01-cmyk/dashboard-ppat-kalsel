@@ -132,9 +132,3 @@ try:
 
     # Filter Data
     df_f = data[data[kol_kantah] == pilihan_kantah] if pilihan_kantah != "Semua" else data
-
-    # Menampilkan total laporan saja (Nama PPAT & Kantah di judul dihapus)
-    st.metric("Total Laporan", len(df_f))
-
-    # Grafik Utama
-    counts = df_f[kol_ppat].value_counts().reset_index()
