@@ -139,16 +139,3 @@ try:
     # Grafik Utama
     counts = df_f[kol_ppat].value_counts().reset_index()
     counts.columns = ['PPAT', 'Jumlah']
-    
-    fig = px.bar(
-        counts, 
-        x='Jumlah', 
-        y='PPAT', 
-        orientation='h',
-        text='Jumlah',
-        color_discrete_sequence=['#3498db']
-    )
-        yaxis={'categoryorder':'total ascending', 'title': ''}, # Judul sumbu Y dihapus
-        xaxis={'title': 'Jumlah Laporan'},
-        height=max(400, len(counts) * 30),
-        margin=dict(l=200)
