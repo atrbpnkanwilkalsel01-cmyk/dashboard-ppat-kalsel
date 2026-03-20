@@ -3,7 +3,63 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")
+import streamlit as st
+import pandas as pd
+import plotly.express as px
 
+st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")
+
+# URL Google Sheets Anda
+URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
+
+@st.cache_data(ttl=60)
+def load_data():
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+    return df
+
+try:
+    df = load_data()
+    
+    # Deteksi otomatis kolom Kantah dan Nama PPAT
+    col_kantah = [c for c in df.columns if 'Kantor Pertanahan' in c][0]
+    col_ppat = [c for c in df.columns if 'Nama' in c and 'PPAT' in c][0]
+
+    st.title("📊 Monitoring Pelaporan PPAT")
+    
+    # Filter di Sidebar
+    st.sidebar.header("Filter")
+    list_kantah = sorted(df[col_kantah].unique().tolist())
+    pilihan = st.sidebar.selectbox("Pilih Kantor Pertanahan:", ["Semua"] + list_kantah)
+
+    # Filter Data
+    if pilihan != "Semua":
+        df_filtered = df[df[col_kantah] == pilihan]
+    else:
+        df_filtered = df
+
+    # Statistik Singkat
+    c1, c2 = st.columns(2)
+    c1.metric("Total Laporan", len(df_filtered))
+    c2.metric("Jumlah PPAT", df_filtered[col_ppat].nunique())
+
+    # Grafik Nama PPAT
+    st.subheader(f"Daftar PPAT Melapor - {pilihan}")
+    counts = df_filtered[col_ppat].value_counts().reset_index()
+    counts.columns = ['Nama PPAT', 'Jumlah']
+    
+    fig = px.bar(counts, x='Jumlah', y='Nama PPAT', orientation='h', 
+                 text='Jumlah', color='Jumlah', color_continuous_scale='Blues')
+    
+    fig.update_layout(yaxis={'categoryorder':'total ascending'}, height=max(400, len(counts)*30))
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Tabel Detail
+    with st.expander("Lihat Detail Data"):
+        st.write(df_filtered[[col_kantah, col_ppat, 'Timestamp']])
+
+except Exception as e:
+    st.error(f"Ada kendala: {e}")
 # Link Google Sheets Baru (Format CSV Export)import streamlit as st
 import pandas as pd
 import plotly.express as px
