@@ -2,64 +2,75 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. Konfigurasi Awal
-st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")
+# 1. Setting Halaman
+st.set_page_config(page_title="Dashboard PPAT Lengkap", layout="wide")
 
-# 2. Link Data (Mode CSV)
+# 2. Link Google Sheets
 URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
 
 @st.cache_data(ttl=60)
 def load_data():
-    # Load data dan bersihkan nama kolom
     df = pd.read_csv(URL, dtype=str)
     df.columns = [str(c).strip() for c in df.columns]
     return df
 
-st.title("📊 Monitoring Pelaporan PPAT")
-
 try:
     df = load_data()
+    st.title("📊 Monitoring Seluruh PPAT")
+
+    # Identifikasi Kolom secara otomatis
+    col_kantah = [c for c in df.columns if 'Kantor' in c or 'Kantah' in c][0]
+    col_ppat = [c for c in df.columns if 'Nama' in c and 'PPAT' in c][0]
+
+    # Sidebar Filter
+    list_kantah = sorted(df[col_kantah].dropna().unique().tolist())
+    pilih = st.sidebar.selectbox("Filter Wilayah:", ["Semua Wilayah"] + list_kantah)
     
-    if df.empty:
-        st.warning("Data di Google Sheets kosong atau tidak terbaca.")
-    else:
-        # --- DETEKSI KOLOM SECARA CERDAS (PENGGANTI INDEX) ---
-        # Mencari kolom wilayah (Kantor Pertanahan)
-        col_kantah = [c for c in df.columns if 'Kantor' in c or 'Kantah' in c]
-        # Mencari kolom Nama PPAT
-        col_ppat = [c for c in df.columns if 'Nama' in c]
-        
-        # Jika tidak ketemu, pakai kolom yang tersedia secara default
-        ck = col_kantah[0] if col_kantah else df.columns[min(1, len(df.columns)-1)]
-        cp = col_ppat[0] if col_ppat else df.columns[min(2, len(df.columns)-1)]
+    # Proses Data Filter
+    df_f = df[df[col_kantah] == pilih] if pilih != "Semua Wilayah" else df
 
-        # --- SIDEBAR & FILTER ---
-        list_kantah = sorted(df[ck].dropna().unique().tolist())
-        pilih = st.sidebar.selectbox("Filter Wilayah:", ["Semua"] + list_kantah)
-        df_f = df[df[ck] == pilih] if pilih != "Semua" else df
+    # Hitung Statistik PPAT
+    counts = df_f[col_ppat].value_counts().reset_index()
+    counts.columns = ['Nama PPAT', 'Jumlah']
+    
+    # --- RAHASIA AGAR SEMUA NAMA TAMPIL ---
+    # Kita hitung berapa jumlah PPAT unik. 
+    # Lalu kita kalikan dengan 25 pixel per baris agar grafik memanjang ke bawah.
+    jumlah_nama = len(counts)
+    tinggi_grafik = max(500, jumlah_nama * 25) 
 
-        # --- TAMPILAN DASHBOARD ---
-        st.metric("Total Laporan Masuk", len(df_f))
+    st.metric("Total Laporan Terdeteksi", len(df_f))
 
-        # Grafik Batang (Tampilkan SEMUA Nama PPAT)
-        st.subheader(f"📈 Grafik Aktivitas PPAT ({pilih})")
-        counts = df_f[cp].value_counts().reset_index()
-        counts.columns = ['Nama PPAT', 'Jumlah']
-        counts['Jumlah'] = pd.to_numeric(counts['Jumlah'], errors='coerce').fillna(0)
+    # Tampilkan Grafik
+    st.subheader(f"Daftar Aktivitas Seluruh PPAT ({pilih})")
+    
+    if jumlah_nama > 0:
+        fig = px.bar(
+            counts, 
+            x='Jumlah', 
+            y='Nama PPAT', 
+            orientation='h', 
+            text='Jumlah',
+            color='Jumlah',
+            color_continuous_scale='Blues'
+        )
         
-        # Tinggi dinamis agar semua nama muncul (30 pixel per nama)
-        tinggi_grafik = max(500, len(counts) * 30)
+        fig.update_layout(
+            height=tinggi_grafik, # Mengikuti jumlah nama yang ada
+            yaxis={'categoryorder':'total ascending'},
+            margin=dict(l=200), # Memberi ruang agar nama panjang tidak terpotong
+            xaxis_title="Jumlah Laporan",
+            yaxis_title=""
+        )
         
-        fig = px.bar(counts, x='Jumlah', y='Nama PPAT', orientation='h', 
-                     text='Jumlah', color='Jumlah', color_continuous_scale='Blues')
-        fig.update_layout(height=tinggi_grafik, yaxis={'categoryorder':'total ascending'}, yaxis_title="")
         st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Tidak ada data untuk ditampilkan.")
 
-        # --- TABEL DATA LENGKAP (Tampilkan Semua Kolom & Sheet) ---
-        st.markdown("---")
-        st.subheader("📑 Tabel Data Lengkap (Semua Kolom)")
-        st.dataframe(df_f, use_container_width=True)
+    # --- TAMPILKAN SEMUA KOLOM & SHEET ---
+    st.markdown("---")
+    st.subheader("📑 Tabel Data Transaksi Lengkap")
+    st.dataframe(df_f, use_container_width=True)
 
 except Exception as e:
-    st.error(f"Terjadi kesalahan teknis: {e}")
-    st.info("Catatan: Pastikan link Google Sheets Anda sudah di-share 'Anyone with the link can view'.")
+    st.error(f"Gagal memuat grafik: {e}")
