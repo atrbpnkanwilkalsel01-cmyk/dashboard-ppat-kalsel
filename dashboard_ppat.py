@@ -3,7 +3,57 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Dashboard PPAT", layout="wide")
+import streamlit as st
+import pandas as pd
+import plotly.express as px
 
+st.set_page_config(page_title="Dashboard PPAT", layout="wide")
+
+# Link Google Sheets
+URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
+
+def load_data():
+    df = pd.read_csv(URL)
+    return df
+
+st.title("📊 Monitoring Pelaporan PPAT")
+
+try:
+    df = load_data()
+    
+    # Kita panggil kolom berdasarkan urutan (Indeks), bukan berdasarkan nama.
+    # Kolom 0 = Timestamp, Kolom 1 = Kantor Pertanahan, Kolom 2 = Nama PPAT
+    col_kantah = df.columns[1] 
+    col_ppat = df.columns[2]
+
+    # Filter Sidebar
+    list_kantah = sorted(df[col_kantah].dropna().unique().tolist())
+    pilih = st.sidebar.selectbox("Pilih Kantor Pertanahan:", ["Semua"] + list_kantah)
+
+    # Filter Data
+    df_f = df[df[col_kantah] == pilih] if pilih != "Semua" else df
+
+    # Statistik
+    st.metric("Total Laporan", len(df_f))
+
+    # Grafik Nama PPAT
+    st.subheader(f"Aktivitas PPAT - {pilih}")
+    counts = df_f[col_ppat].value_counts().reset_index()
+    counts.columns = ['PPAT', 'Jumlah']
+    
+    fig = px.bar(counts, x='Jumlah', y='PPAT', orientation='h', text='Jumlah',
+                 color_discrete_sequence=['#3498db'])
+    
+    fig.update_layout(
+        height=max(400, len(counts)*30),
+        yaxis={'categoryorder':'total ascending'},
+        xaxis_title="Jumlah Laporan",
+        yaxis_title=""
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+except Exception as e:
+    st.error(f"Gagal memuat data: {e}")
 # Link Google Sheets Anda
 URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
 
