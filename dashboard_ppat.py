@@ -6,7 +6,60 @@ import plotly.express as px
 st.set_page_config(page_title="Dashboard Lengkap PPAT Kalsel", layout="wide")
 
 # 2. Link Google Sheets (Format CSV Export)
+URL_SHEET = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKimport streamlit as st
+import pandas as pd
+import plotly.express as px
+
+# 1. Konfigurasi Halaman Dasar
+st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")
+
+# 2. Link Google Sheets (Format CSV Export)
+# Pastikan Sheets Anda "Anyone with the link can view"
 URL_SHEET = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
+
+@st.cache_data(ttl=60)
+def load_data():
+    # Membaca semua data
+    df = pd.read_csv(URL_SHEET)
+    
+    # Membersihkan spasi di nama kolom
+    df.columns = [str(c).strip() for c in df.columns]
+    
+    # --- PRE-PROCESSING DATA UNTUK GRAFIK WAKTU ---
+    # Mencari kolom Timestamp secara otomatis
+    col_time = [c for c in df.columns if 'Timestamp' in c or 'Waktu' in c]
+    if col_time:
+        # Ubah menjadi format tanggal Python, abaikan error jika ada data kotor
+        df[col_time[0]] = pd.to_datetime(df[col_time[0]], errors='coerce')
+        # Buat kolom baru hanya berisi Tanggal (tanpa jam)
+        df['Tanggal_Lapor'] = df[col_time[0]].dt.date
+        # Buat kolom baru berisi Bulan-Tahun (misal: "Oct 2023")
+        df['Bulan_Tahun'] = df[col_time[0]].dt.strftime('%b %Y')
+
+    return df
+
+try:
+    df = load_data()
+    
+    st.title("📊 Monitoring Pelaporan PPAT Kalsel")
+    st.markdown("---")
+
+    # --- BAGIAN FILTER DINAMIS (Sidebar) ---
+    st.sidebar.header("Filter Data")
+    
+    # Mencari kolom Kantor Pertanahan secara otomatis untuk filter
+    col_kantah = [c for c in df.columns if 'Kantor' in c or 'Kantah' in c]
+    
+    if col_kantah:
+        ck = col_kantah[0]
+        # Ambil daftar Kantah unik, hapus data kosong (NaN)
+        list_kantah = sorted(df[ck].dropna().unique().tolist())
+        pilih_kantah = st.sidebar.selectbox("Pilih Wilayah (Kantah):", ["Semua Wilayah"] + list_kantah)
+        
+        # Logika Filter
+        if pilih_kantah != "Semua Wilayah":
+            df_display = df[df[ck] == pilih_kantah]
+        else:eC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
 
 @st.cache_data(ttl=60)
 def load_data():
