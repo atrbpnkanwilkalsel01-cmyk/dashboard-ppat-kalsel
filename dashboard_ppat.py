@@ -86,8 +86,6 @@ try:
     
     st.plotly_chart(fig, use_container_width=True)
 
-st.set_page_config(page_title="Dashboard", layout="wide")
-
 # Link Data
 URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
 
