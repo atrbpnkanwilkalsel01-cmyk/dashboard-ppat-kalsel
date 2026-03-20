@@ -148,8 +148,6 @@ try:
         text='Jumlah',
         color_discrete_sequence=['#3498db']
     )
-    
-    fig.update_layout(
         yaxis={'categoryorder':'total ascending', 'title': ''}, # Judul sumbu Y dihapus
         xaxis={'title': 'Jumlah Laporan'},
         height=max(400, len(counts) * 30),
