@@ -115,14 +115,6 @@ try:
     
     st.plotly_chart(fig, use_container_width=True)
 
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
-
-@st.cache_data(ttl=60)
-def ambil_data():
-    df = pd.read_csv(URL_SHEET)
-    df.columns = df.columns.str.strip()
-    return df
-
 # 3. Proses Tampilan
 try:
     data = ambil_data()
