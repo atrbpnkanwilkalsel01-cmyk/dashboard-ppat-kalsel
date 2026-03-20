@@ -8,7 +8,50 @@ st.set_page_config(page_title="Monitoring PPAT Kalsel", layout="wide")
 # 2. Link Data (Google Sheets CSV Eimpoimport streamlit as st
 import pandas as pd
 import plotly.express as px
+import streamlit as st
+import pandas as pd
+import plotly.express as px
 
+st.set_page_config(page_title="Dashboard PPAT", layout="wide")
+
+# Mengambil Data dari Google Sheets
+URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
+
+@st.cache_data(ttl=60)
+def load_data():
+    df = pd.read_csv(URL)
+    df.columns = df.columns.str.strip()
+    return df
+
+try:
+    df = load_data()
+    # Deteksi kolom secara otomatis
+    col_kantah = [c for c in df.columns if 'Kantor Pertanahan' in c][0]
+    col_ppat = [c for c in df.columns if 'Nama' in c and 'PPAT' in c][0]
+
+    st.title("📊 Monitoring Pelaporan PPAT")
+
+    # Filter Sidebar
+    pilihan = st.sidebar.selectbox("Pilih Wilayah:", ["Semua"] + sorted(df[col_kantah].unique().tolist()))
+    
+    # Filter Data
+    df_f = df[df[col_kantah] == pilihan] if pilihan != "Semua" else df
+
+    # Tampilan Angka
+    st.metric("Total Laporan Masuk", len(df_f))
+
+    # Grafik Nama PPAT
+    st.subheader(f"Daftar PPAT - {pilihan}")
+    counts = df_f[col_ppat].value_counts().reset_index()
+    counts.columns = ['Nama PPAT', 'Jumlah']
+    
+    fig = px.bar(counts, x='Jumlah', y='Nama PPAT', orientation='h', text='Jumlah', color_discrete_sequence=['#3498db'])
+    fig.update_layout(height=max(400, len(counts)*30), yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="")
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+except Exception as e:
+    st.error("Gagal memuat data. Periksa koneksi atau kolom Google Sheets.")
 st.set_page_config(page_title="Dashboard PPAT", layout="wide")
 
 # Ambil Data
