@@ -154,4 +154,3 @@ try:
         xaxis={'title': 'Jumlah Laporan'},
         height=max(400, len(counts) * 30),
         margin=dict(l=200)
-    )
