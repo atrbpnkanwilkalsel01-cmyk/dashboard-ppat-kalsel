@@ -61,6 +61,3 @@ try:
     # Tabel Detail (Hanya menampilkan Timestamp)
     with st.expander("Lihat Detail Waktu"):
         st.dataframe(df_f[['Timestamp']], use_container_width=True)
-
-except Exception as e:
-    st.error("Terjadi kesalahan teknis. Pastikan data di Google Sheets tersedia.")
