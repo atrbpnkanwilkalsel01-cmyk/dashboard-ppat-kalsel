@@ -11,7 +11,6 @@ URL_SHEET = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVE
 @st.cache_data(ttl=60)
 def ambil_data():
     df = pd.read_csv(URL_SHEET)
-    # Bersihkan nama kolom dari spasi gaib
     df.columns = df.columns.str.strip()
     return df
 
@@ -19,61 +18,49 @@ def ambil_data():
 try:
     data = ambil_data()
     
-    # Deteksi kolom secara otomatis berdasarkan kata kunci
-    kolom_kantah = [c for c in data.columns if 'Kantor Pertanahan' in c][0]
-    kolom_ppat = [c for c in data.columns if 'Nama' in c and 'PPAT' in c][0]
+    # Deteksi kolom (mencari kolom yang relevan secara otomatis)
+    kol_kantah = [c for c in data.columns if 'Kantor Pertanahan' in c][0]
+    kol_ppat = [c for c in data.columns if 'Nama' in c and 'PPAT' in c][0]
 
-    st.title("📊 Monitoring Pelaporan PPAT")
-    st.markdown("---")
+    st.title("📊 Monitoring Pelaporan")
 
-    # Sidebar untuk Filter
-    st.sidebar.header("Filter Wilayah")
+    # Sidebar Filter
     pilihan_kantah = st.sidebar.selectbox(
-        "Pilih Kantor Pertanahan:", 
-        ["Semua Wilayah"] + sorted(data[kolom_kantah].unique().tolist())
+        "Pilih Wilayah:", 
+        ["Semua"] + sorted(data[kol_kantah].unique().tolist())
     )
 
-    # Logika Filter Data
-    if pilihan_kantah != "Semua Wilayah":
-        df_final = data[data[kolom_kantah] == pilihan_kantah]
-    else:
-        df_final = data
+    # Filter Data
+    df_f = data[data[kol_kantah] == pilihan_kantah] if pilihan_kantah != "Semua" else data
 
-    # Tampilan Statistik Singkat
-    c1, c2 = st.columns(2)
-    c1.metric("Total Laporan Masuk", len(df_final))
-    c2.metric("Jumlah PPAT Melapor", df_final[kolom_ppat].nunique())
+    # Menampilkan total laporan saja (Nama PPAT & Kantah di judul dihapus)
+    st.metric("Total Laporan", len(df_f))
 
-    # Grafik Nama-Nama PPAT
-    st.subheader(f"Daftar Aktivitas PPAT: {pilihan_kantah}")
+    # Grafik Utama
+    counts = df_f[kol_ppat].value_counts().reset_index()
+    counts.columns = ['PPAT', 'Jumlah']
     
-    # Hitung jumlah laporan per PPAT
-    hitung_ppat = df_final[kolom_ppat].value_counts().reset_index()
-    hitung_ppat.columns = ['Nama PPAT', 'Jumlah']
-    
-    # Buat Grafik Batang
     fig = px.bar(
-        hitung_ppat, 
+        counts, 
         x='Jumlah', 
-        y='Nama PPAT', 
+        y='PPAT', 
         orientation='h',
         text='Jumlah',
-        color='Jumlah',
-        color_continuous_scale='Blues'
+        color_discrete_sequence=['#3498db']
     )
     
-    # Atur tinggi grafik agar tidak bertumpuk
     fig.update_layout(
-        yaxis={'categoryorder':'total ascending'}, 
-        height=max(400, len(hitung_ppat) * 30),
+        yaxis={'categoryorder':'total ascending', 'title': ''}, # Judul sumbu Y dihapus
+        xaxis={'title': 'Jumlah Laporan'},
+        height=max(400, len(counts) * 30),
         margin=dict(l=200)
     )
     
     st.plotly_chart(fig, use_container_width=True)
 
-    # Tabel Detail (Opsional di bagian bawah)
-    with st.expander("Lihat Detail Tabel"):
-        st.dataframe(df_final[[kolom_kantah, kolom_ppat, 'Timestamp']], use_container_width=True)
+    # Tabel Detail (Hanya menampilkan Timestamp)
+    with st.expander("Lihat Detail Waktu"):
+        st.dataframe(df_f[['Timestamp']], use_container_width=True)
 
 except Exception as e:
-    st.error("Gagal memuat data. Periksa apakah kolom 'Kantor Pertanahan' dan 'Nama PPAT' sudah benar di Google Sheets.")
+    st.error("Terjadi kesalahan teknis. Pastikan data di Google Sheets tersedia.")
