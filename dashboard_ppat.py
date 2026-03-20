@@ -138,4 +138,3 @@ try:
 
     # Grafik Utama
     counts = df_f[kol_ppat].value_counts().reset_index()
-    counts.columns = ['PPAT','Jumlah']
