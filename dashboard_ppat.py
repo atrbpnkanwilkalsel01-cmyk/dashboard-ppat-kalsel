@@ -62,6 +62,3 @@ try:
     fig_ppat.update_layout(yaxis={'categoryorder':'total ascending'}) # Urutkan dari yang terbanyak
     st.plotly_chart(fig_ppat, use_container_width=True)
 
-    # --- GRAFIK TAMBAHAN: TREN BULANAN DI WILAYAH TERSEBUT ---
-    st.markdown("### 📅 Tren Waktu Pelaporan")
-    df_bulan_count = df_filtered[col_
