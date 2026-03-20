@@ -83,11 +83,6 @@ try:
     
     fig = px.bar(counts, x='Jumlah', y='PPAT', orientation='h', text='Jumlah')
     fig.update_layout(height=max(400, len(counts)*30), yaxis={'categoryorder':'total ascending'}, xaxis_title="", yaxis_title="")
-    
-def load():
-    df = pd.read_csv(URL)
-    df.columns = df.columns.str.strip()
-    return df
 
 try:
     data = load()
