@@ -1,6 +1,82 @@
 import streamlit as st
 import pandas as pd
 
+# 1. Konfigurasi Halaman Luas
+st.set_page_config(page_title="Monitoring PPAT Kalsel", layout="wide")
+
+# 2. Link Google Sheets (Pastikan URL ini benar-benar mengarah ke CSV export)
+URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
+
+@st.cache_data(ttl=10) # Update sangat cepat setiap 10 detik
+def load_data():
+    # Membaca data tanpa batasan, semua diperlakukan sebagai teks agar tidak hilang
+    df = pd.read_csv(URL, dtype=str)
+    # Menghapus spasi di awal/akhir nama kolom
+    df.columns = [str(c).strip() for c in df.columns]
+    return df
+
+st.title("📂 Data Lengkap Pelaporan PPAT")
+st.markdown("---")
+
+try:
+    df = load_data()
+    
+    if df.empty:
+        st.error("Data tidak ditemukan di Google Sheets. Pastikan sheet tidak kosong.")
+    else:
+        # 3. Sidebar untuk Filter Wilayah
+        # Kita ambil kolom Kantor Pertanahan (biasanya kolom ke-2)
+        col_kantah = df.columns[1] 
+        # Kita ambil kolom Nama PPAT (biasanya kolom ke-3)
+        col_ppat = df.columns[2]
+
+        st.sidebar.header("Pilih Filter")
+        list_kantah = sorted(df[col_kantah].dropna().unique().tolist())
+        pilih_kantah = st.sidebar.selectbox("Tampilkan Wilayah:", ["SEMUA KANTAH"] + list_kantah)
+
+        # Logika Filter
+        if pilih_kantah == "SEMUA KANTAH":
+            df_final = df
+        else:
+            df_final = df[df[col_kantah] == pilih_kantah]
+
+        # 4. Ringkasan (Metrics)
+        # Di sini kita akan hitung berdasarkan data asli di sheet
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Total Seluruh Laporan", len(df_final))
+        with c2:
+            st.metric("Jumlah PPAT Terdata", df_final[col_ppat].nunique())
+        with c3:
+            st.metric("Jumlah Kantah", df_final[col_kantah].nunique())
+
+        st.markdown("---")
+        
+        # 5. Tabel Utama (Menampilkan SEMUA Kolom dan SEMUA Baris)
+        st.subheader(f"📑 Tabel Transaksi: {pilih_kantah}")
+        st.write("Berikut adalah seluruh data yang terbaca dari Google Sheets:")
+        
+        # Menampilkan tabel yang bisa di-scroll dan dicari
+        st.dataframe(
+            df_final, 
+            use_container_width=True, 
+            height=700 # Tabel dibuat tinggi agar banyak baris terlihat sekaligus
+        )
+
+        # 6. Fitur Download untuk backup
+        csv = df_final.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Data Ini ke Excel (CSV)",
+            data=csv,
+            file_name=f'data_ppat_{pilih_kantah}.csv',
+            mime='text/csv',
+        )
+
+except Exception as e:
+    st.error(f"Terjadi kesalahan saat menarik data: {e}")
+    st.info("Pastikan Google Sheets sudah di-set 'Anyone with the link can view'.")import streamlit as st
+import pandas as pd
+
 # 1. Konfigurasi Halaman Modern
 st.set_page_config(page_title="Data Center PPAT Kalsel", layout="wide")
 
