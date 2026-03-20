@@ -2,19 +2,18 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")import streamlit as st
-import pandas as pd
-import plotly.express as px
-
 st.set_page_config(page_title="Dashboard PPAT Kalsel", layout="wide")
 
-# Link Google Sheets
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1QPeMTsbhho_YNS8nEq4gtz3WHk925Zb_gtYXpUvXkH0/export?format=csv"
+# Link Google Sheets Baru (Format CSV Export)
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
 
 @st.cache_data(ttl=60)
 def load_data():
+    # Membaca data
     df = pd.read_csv(SHEET_URL)
-    df.columns = df.columns.str.strip() 
+    # Membersihkan nama kolom dari spasi tambahan
+    df.columns = df.columns.str.strip()
+    # Memastikan semua data terbaca sebagai teks (mencegah error tipe data)
     for col in df.columns:
         df[col] = df[col].astype(str)
     return df
@@ -22,37 +21,42 @@ def load_data():
 try:
     df = load_data()
 
-    # Identifikasi Kolom Otomatis
+    # --- IDENTIFIKASI KOLOM BERDASARKAN SHEET BARU ---
+    # Mencari kolom Kantor Pertanahan
     col_kantah = [c for c in df.columns if 'Kantor Pertanahan' in c][0]
-    col_ppat = [c for c in df.columns if 'Kantah' in c or 'Nama' in c][0]
+    # Mencari kolom Nama PPAT (berdasarkan sheet baru biasanya kolom 'Nama PPAT')
+    col_ppat = [c for c in df.columns if 'Nama' in c and 'PPAT' in c][0]
 
-    st.title("📊 Monitoring Pelaporan PPAT Per Wilayah")
+    st.title("📊 Monitoring Pelaporan PPAT")
+    st.markdown(f"**Sumber Data:** Pelaporan Bulanan PPAT")
     st.divider()
 
-    # --- FITUR FILTER DI SIDEBAR ---
-    st.sidebar.header("Pilihan Wilayah")
+    # --- SIDEBAR FILTER ---
+    st.sidebar.header("Filter Wilayah")
     list_kantah = sorted(df[col_kantah].unique().tolist())
     pilihan_kantah = st.sidebar.selectbox("Pilih Kantor Pertanahan:", ["Semua Wilayah"] + list_kantah)
 
-    # Logika Filter
+    # Logika Penyaringan Data
     if pilihan_kantah != "Semua Wilayah":
         df_filtered = df[df[col_kantah] == pilihan_kantah]
-        st.subheader(f"📍 Daftar PPAT yang Melapor di {pilihan_kantah}")
+        st.subheader(f"📍 Daftar Aktivitas PPAT di {pilihan_kantah}")
     else:
         df_filtered = df
-        st.subheader("📍 Daftar PPAT yang Melapor (Seluruh Wilayah)")
+        st.subheader("📍 Daftar Aktivitas PPAT (Seluruh Wilayah)")
 
-    # --- RINGKASAN ANGKA ---
-    col_stat1, col_stat2 = st.columns(2)
-    with col_stat1:
+    # --- RINGKASAN DATA ---
+    col_1, col_2 = st.columns(2)
+    with col_1:
         st.metric("Total Laporan Masuk", len(df_filtered))
-    with col_stat2:
-        st.metric("Jumlah PPAT yang Melapor", df_filtered[col_ppat].nunique())
+    with col_2:
+        st.metric("Jumlah PPAT Terdaftar", df_filtered[col_ppat].nunique())
 
     # --- GRAFIK UTAMA: NAMA PPAT ---
+    # Menghitung jumlah laporan per Nama PPAT
     df_ppat_count = df_filtered[col_ppat].value_counts().reset_index()
     df_ppat_count.columns = [col_ppat, 'Jumlah Laporan']
 
+    # Membuat Grafik Batang Horizontal
     fig_ppat = px.bar(
         df_ppat_count, 
         x='Jumlah Laporan', 
@@ -60,86 +64,17 @@ try:
         orientation='h',
         color='Jumlah Laporan',
         color_continuous_scale='Blues',
-        text='Jumlah Laporan'
+        text='Jumlah Laporan',
+        title=f"Statistik Pelaporan per Nama PPAT ({pilihan_kantah})"
     )
-    
+
+    # Pengaturan tampilan agar nama tidak terpotong
     fig_ppat.update_traces(textposition='outside')
     
-    # Menghitung tinggi grafik agar tidak sesak
+    # Menghitung tinggi grafik secara dinamis berdasarkan jumlah nama PPAT
     tinggi_grafik = max(400, len(df_ppat_count) * 35)
     
     fig_ppat.update_layout(
         yaxis={'categoryorder':'total ascending'},
-        height=tinggi_grafik
-    )
-    
-    st.plotly_chart(fig_ppat, use_container_width=True)
-
-    # --- TABEL DETAIL ---
-    st.markdown("---")
-    with st.expander("Lihat Detail Data Tabel"):
-        st.dataframe(df_filtered[[col_kantah, col_ppat, 'Timestamp']], use_container_width=True)
-
-except Exception as e:
-    st.error(f"Gagal memproses data. Silakan cek nama kolom di Sheets.")
-    st.write("Error Detail:", e)
-
-# Link Google Sheets
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1QPeMTsbhho_YNS8nEq4gtz3WHk925Zb_gtYXpUvXkH0/export?format=csv"
-
-@st.cache_data(ttl=60)
-def load_data():
-    df = pd.read_csv(SHEET_URL)
-    df.columns = df.columns.str.strip() 
-    for col in df.columns:
-        df[col] = df[col].astype(str)
-    return df
-
-try:
-    df = load_data()
-
-    # Identifikasi Kolom Otomatis
-    col_kantah = [c for c in df.columns if 'Kantor Pertanahan' in c][0]
-    col_ppat = [c for c in df.columns if 'Kantah' in c or 'Nama' in c][0]
-
-    st.title("📊 Monitoring Pelaporan PPAT Per Wilayah")
-    st.divider()
-
-    # --- FITUR FILTER DI SIDEBAR ---
-    st.sidebar.header("Pilihan Wilayah")
-    list_kantah = sorted(df[col_kantah].unique().tolist())
-    pilihan_kantah = st.sidebar.selectbox("Pilih Kantor Pertanahan:", ["Semua Wilayah"] + list_kantah)
-
-    # Logika Filter
-    if pilihan_kantah != "Semua Wilayah":
-        df_filtered = df[df[col_kantah] == pilihan_kantah]
-        st.subheader(f"📍 Daftar PPAT yang Melapor di {pilihan_kantah}")
-    else:
-        df_filtered = df
-        st.subheader("📍 Daftar PPAT yang Melapor (Seluruh Wilayah)")
-
-    # --- RINGKASAN ANGKA ---
-    col_stat1, col_stat2 = st.columns(2)
-    with col_stat1:
-        st.metric("Total Laporan Masuk", len(df_filtered))
-    with col_stat2:
-        st.metric("Jumlah PPAT yang Melapor", df_filtered[col_ppat].nunique())
-
-    # --- GRAFIK UTAMA: NAMA PPAT ---
-    df_ppat_count = df_filtered[col_ppat].value_counts().reset_index()
-    df_ppat_count.columns = [col_ppat, 'Jumlah Laporan']
-
-    fig_ppat = px.bar(
-        df_ppat_count, 
-        x='Jumlah Laporan', 
-        y=col_ppat, 
-        orientation='h',
-        color='Jumlah Laporan',
-        color_continuous_scale='Blues',
-        text='Jumlah Laporan'
-    )
-    
-    fig_ppat.update_traces(textposition='outside')
-    fig_ppat.update_layout(
-        yaxis={'categoryorder':'total ascending'},
-        height=max(400, len(df_ppat_count)
+        height=tinggi_grafik,
+        margin=dict(l=200)
