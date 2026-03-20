@@ -136,8 +136,6 @@ try:
     
     st.plotly_chart(fig, use_container_width=True)
 
-except Exception:
-    st.error("Pastikan koneksi internet stabil atau kolom Google Sheets tidak kosong.")xport)
 URL_SHEET = "https://docs.google.com/spreadsheets/d/1OfPHzg74p-WKeC0WzwT931cLdVEW20mbggv-2W8X7Gw/export?format=csv"
 
 @st.cache_data(ttl=60)
