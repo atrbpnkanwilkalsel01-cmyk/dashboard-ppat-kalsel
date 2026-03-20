@@ -73,8 +73,3 @@ try:
     
     # Menghitung tinggi grafik secara dinamis berdasarkan jumlah nama PPAT
     tinggi_grafik = max(400, len(df_ppat_count) * 35)
-    
-    fig_ppat.update_layout(
-        yaxis={'categoryorder':'total ascending'},
-        height=tinggi_grafik,
-        margin=dict(l=200)
